@@ -1,122 +1,300 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:misgastos/providers/gastos_provider.dart';
+import 'package:misgastos/screens/parametricas/pantalla_configuracion.dart';
+import 'package:misgastos/screens/gastos/pantalla_gastos.dart';
+import 'package:misgastos/screens/dashboard/pantalla_dashboard.dart';
+import 'package:misgastos/screens/grupos/pantalla_grupos_resumen.dart';
+import 'package:misgastos/screens/gastos/pantalla_facturacion.dart';
+import 'package:misgastos/utils/formato.dart';
+import 'package:misgastos/utils/iconos.dart';
+import 'package:misgastos/models/periodo.dart';
+import 'package:misgastos/screens/shared/selector_periodo.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('es', null);
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => GastosProvider()..inicializar(),
+      child: const GastosApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class GastosApp extends StatelessWidget {
+  const GastosApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Mis Gastos',
+      debugShowCheckedModeBanner: false,
+      // Azul celeste — se adapta al sistema del celular
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF0288D1), // Azul celeste primario
+          brightness: Brightness.light,
+        ),
+        useMaterial3: true,
+        // Tipografía más limpia
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+          titleMedium: TextStyle(fontWeight: FontWeight.w700),
+          labelLarge: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Color(0xFFE3F2FD)), // azul muy suave
+          ),
+        ),
+        // AppBar limpio
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          backgroundColor: Colors.white,
+          foregroundColor: Color(0xFF01579B),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF01579B),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        // NavigationBar
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: const Color(0xFFE3F2FD),
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ),
+        // Botones
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF0288D1),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        // Inputs
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFB3E5FC)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFB3E5FC)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF0288D1), width: 2),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFF8FBFF),
+        ),
+        scaffoldBackgroundColor: const Color(0xFFF5F9FF),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+
+      // Tema oscuro — azul marino
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF29B6F6), // Azul más claro en dark
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        textTheme: const TextTheme(
+          titleLarge: TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+          titleMedium: TextStyle(fontWeight: FontWeight.w700),
+          labelLarge: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.white.withOpacity(0.08)),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+          backgroundColor: Color(0xFF0D1B2A),
+          foregroundColor: Color(0xFF29B6F6),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF29B6F6),
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: const Color(0xFF0D1B2A),
+          indicatorColor: const Color(0xFF0288D1).withOpacity(0.3),
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF29B6F6),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.15)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF29B6F6), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.05),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0A1628),
+      ),
+
+      // Se adapta automáticamente al sistema
+      themeMode: ThemeMode.system,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('es'),
+        Locale('en'),
+      ],
+      home: const PantallaRaiz(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class PantallaRaiz extends StatefulWidget {
+  const PantallaRaiz({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<PantallaRaiz> createState() => _PantallaRaizState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _PantallaRaizState extends State<PantallaRaiz> {
+  int _tabActual = 0;
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  final List<_TabInfo> _tabs = const [
+    _TabInfo(
+      label: 'Gastos',
+      icono: Icons.receipt_long_outlined,
+      iconoActivo: Icons.receipt_long,
+    ),
+    _TabInfo(
+      label: 'Facturación',
+      icono: Icons.credit_card_outlined,
+      iconoActivo: Icons.credit_card,
+    ),
+    _TabInfo(
+      label: 'Dashboard',
+      icono: Icons.home_outlined,
+      iconoActivo: Icons.home,
+    ),
+    _TabInfo(
+      label: 'Grupos',
+      icono: Icons.group_outlined,
+      iconoActivo: Icons.group,
+    ),
+    _TabInfo(
+      label: 'Config',
+      icono: Icons.settings_outlined,
+      iconoActivo: Icons.settings,
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final provider = context.watch<GastosProvider>();
+
+    final List<Widget> pantallas = [
+      const PantallaGastos(),
+      const PantallaFacturacion(),
+      const PantallaDashboard(),
+      const PantallaGruposResumen(),
+      const PantallaConfiguracion(),
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      body: IndexedStack(
+        index: _tabActual,
+        children: pantallas,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tabActual,
+        onDestinationSelected: (i) => setState(() => _tabActual = i),
+        destinations: _tabs
+            .map((t) => NavigationDestination(
+                  icon: Icon(t.icono),
+                  selectedIcon: Icon(t.iconoActivo),
+                  label: t.label,
+                ))
+            .toList(),
       ),
     );
   }
+}
+
+class _PantallaProxima extends StatelessWidget {
+  final IconData icono;
+  final String titulo;
+  final String subtitulo;
+
+  const _PantallaProxima({
+    required this.icono,
+    required this.titulo,
+    required this.subtitulo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(title: Text(titulo), centerTitle: true),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icono, size: 72, color: cs.outlineVariant),
+            const SizedBox(height: 16),
+            Text(titulo,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(subtitulo,
+                style: TextStyle(color: cs.outline)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabInfo {
+  final String label;
+  final IconData icono;
+  final IconData iconoActivo;
+  const _TabInfo(
+      {required this.label,
+      required this.icono,
+      required this.iconoActivo});
 }
