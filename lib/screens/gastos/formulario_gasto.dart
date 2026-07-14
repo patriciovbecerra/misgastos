@@ -216,34 +216,6 @@ class _FormularioGastoState extends State<FormularioGasto> {
             _buildSelectorCuotas(cs),
             const SizedBox(height: 20),
 
-            // ── FECHA ─────────────────────────────────────────────
-            _Titulo('Fecha de compra'),
-            const SizedBox(height: 8),
-            Material(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: _seleccionarFecha,
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: cs.outline.withOpacity(0.5)),
-                    borderRadius: BorderRadius.circular(14),
-                    color: cs.surface,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today, color: cs.primary, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(Formato.fechaLarga(_fecha),
-                          style: const TextStyle(fontSize: 15))),
-                      Icon(Icons.edit_calendar_outlined, color: cs.outline, size: 18),
-                    ],
-                  ),
-                ),
-              ),
-            ),
             // ── Cuotas ya pagadas ─────────────────────────────────
             if (_esCuotado && _cuotas > 1) ...[
               const SizedBox(height: 10),
@@ -389,6 +361,35 @@ class _FormularioGastoState extends State<FormularioGasto> {
                 ),
               ),
             const SizedBox(height: 20),
+
+            // ── FECHA ─────────────────────────────────────────────
+            _Titulo('Fecha de compra'),
+            const SizedBox(height: 8),
+            Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: _seleccionarFecha,
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: cs.outline.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(14),
+                    color: cs.surface,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today, color: cs.primary, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(Formato.fechaLarga(_fecha),
+                          style: const TextStyle(fontSize: 15))),
+                      Icon(Icons.edit_calendar_outlined, color: cs.outline, size: 18),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
             // ── DESCRIPCIÓN ───────────────────────────────────────
             _Titulo('Descripción (opcional)'),

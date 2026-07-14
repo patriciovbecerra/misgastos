@@ -1093,17 +1093,10 @@ class _SeccionTarjetaState extends State<_SeccionTarjeta> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Center(
-                                child: g.categoria != null && Iconos.esEmoji(g.categoria!.icono)
-                                    ? Text(g.categoria!.icono,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 20, height: 1.0))
-                                    : Text(
-                                        g.categoria?.nombre.isNotEmpty == true
-                                            ? g.categoria!.nombre[0].toUpperCase()
-                                            : '?',
-                                        style: TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: color)),
+                                child: Text(
+                                    Iconos.toEmoji(g.categoria?.icono ?? ''),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 20, height: 1.0)),
                               ),
                             ),
                             const SizedBox(width: 12),

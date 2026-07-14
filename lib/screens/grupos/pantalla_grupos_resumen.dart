@@ -73,20 +73,41 @@ class _PantallaGruposResumenState extends State<PantallaGruposResumen> {
       }
     }
 
+    // También cargar períodos del calendario registrado
+    final Map<int, Map<String, DateTime>> periodosCalendario = {};
+    final mesSig = hoy.month == 12 ? 1 : hoy.month + 1;
+    final anioSig = hoy.month == 12 ? hoy.year + 1 : hoy.year;
+    for (final medio in provider.mediosPago) {
+      if (medio.id == null) continue;
+      // Buscar período siguiente en calendario
+      final calSig = await provider.db.getPeriodoMes(medio.id!, anioSig, mesSig);
+      if (calSig != null) {
+        periodosCalendario[medio.id!] = calSig;
+      } else {
+        // Buscar período actual
+        final calAct = await provider.db.getPeriodoMes(medio.id!, hoy.year, hoy.month);
+        if (calAct != null) periodosCalendario[medio.id!] = calAct;
+      }
+    }
+
     bool _enPeriodo(Gasto g, Map<int, Map<String, DateTime>> periodos) {
       final p = periodos[g.idMedioPago];
-      if (p == null) return false;
+      if (p == null) return true; // sin período configurado → mostrar siempre
       final desde = p['desde']!;
       final hasta = DateTime(p['hasta']!.year, p['hasta']!.month, p['hasta']!.day, 23, 59, 59);
       return !g.fecha.isBefore(desde) && !g.fecha.isAfter(hasta);
     }
+
+    // Prioridad: calendario registrado > período calculado
+    final periodosEfectivos = Map<int, Map<String, DateTime>>.from(periodosActual)
+      ..addAll(periodosCalendario);
 
     final gastosActual = <int, List<Gasto>>{};
     final gastosSiguiente = <int, List<Gasto>>{};
 
     for (final g in todos) {
       if (g.idGrupo == null || !g.esCompartido) continue;
-      if (_enPeriodo(g, periodosActual)) {
+      if (_enPeriodo(g, periodosEfectivos)) {
         gastosActual.putIfAbsent(g.idGrupo!, () => []).add(g);
       }
       if (_enPeriodo(g, periodosSiguiente)) {
@@ -117,6 +138,98 @@ class _PantallaGruposResumenState extends State<PantallaGruposResumen> {
         _cargando = false;
       });
     }
+  }
+
+  Future<void> _gestionarParticipantes(Grupo grupo) async {
+    final provider = context.read<GastosProvider>();
+    final participantes = await provider.db.getParticipantesByGrupo(grupo.id!);
+    final nombreCtrl = TextEditingController();
+
+    if (!mounted) return;
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => Padding(
+          padding: EdgeInsets.only(
+            left: 20, right: 20, top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(child: Container(width: 40, height: 4,
+                  decoration: BoxDecoration(color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 12),
+              Text('Participantes — \${grupo.nombre}',
+                  style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 12),
+              // Lista de participantes
+              ...participantes.map((p) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  child: Text(p.nombre[0].toUpperCase())),
+                title: Text(p.nombre),
+                trailing: IconButton(
+                  icon: Icon(Icons.delete_outline,
+                      color: Theme.of(context).colorScheme.error),
+                  onPressed: () async {
+                    await provider.db.eliminarParticipante(p.id!);
+                    final nuevos = await provider.db.getParticipantesByGrupo(grupo.id!);
+                    setS(() => participantes
+                      ..clear()
+                      ..addAll(nuevos));
+                  },
+                ),
+              )),
+              if (participantes.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text('Sin participantes aún',
+                      style: TextStyle(color: Colors.grey)),
+                ),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 8),
+              // Agregar nuevo
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: nombreCtrl,
+                    decoration: const InputDecoration(
+                      hintText: 'Nombre del participante',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () async {
+                    final nombre = nombreCtrl.text.trim();
+                    if (nombre.isEmpty) return;
+                    await provider.db.insertParticipante(
+                        Participante(idGrupo: grupo.id!, nombre: nombre));
+                    nombreCtrl.clear();
+                    final nuevos = await provider.db.getParticipantesByGrupo(grupo.id!);
+                    setS(() => participantes
+                      ..clear()
+                      ..addAll(nuevos));
+                  },
+                  child: const Text('Agregar'),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+    _cargarDatos();
   }
 
   void _abrirFormularioGrupo([Grupo? grupo]) {
@@ -236,6 +349,7 @@ class _PantallaGruposResumenState extends State<PantallaGruposResumen> {
                         total: total,
                         onEditar: () => _abrirFormularioGrupo(grupo),
                         onEliminar: () => _confirmarEliminar(grupo),
+                        onGestionarParticipantes: () => _gestionarParticipantes(grupo),
                         onVerTodos: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -289,6 +403,7 @@ class _TarjetaGrupo extends StatelessWidget {
   final VoidCallback onEditar;
   final VoidCallback onEliminar;
   final VoidCallback onVerTodos;
+  final VoidCallback onGestionarParticipantes;
 
   const _TarjetaGrupo({
     required this.grupo,
@@ -299,6 +414,7 @@ class _TarjetaGrupo extends StatelessWidget {
     required this.onEditar,
     required this.onEliminar,
     required this.onVerTodos,
+    required this.onGestionarParticipantes,
   });
 
   static Color _hex(String hex) =>
@@ -358,6 +474,11 @@ class _TarjetaGrupo extends StatelessWidget {
                         ],
                       ),
                     ),
+                    IconButton(
+                        onPressed: onGestionarParticipantes,
+                        tooltip: 'Participantes',
+                        icon: Icon(Icons.group_add_outlined,
+                            size: 18, color: cs.primary)),
                     IconButton(
                         onPressed: onEditar,
                         icon: Icon(Icons.edit_outlined,
@@ -500,17 +621,10 @@ class _TarjetaGrupo extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(
-                                child: g.categoria != null && Iconos.esEmoji(g.categoria!.icono)
-                                    ? Text(g.categoria!.icono,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 20, height: 1.0))
-                                    : Text(
-                                        g.categoria?.nombre.isNotEmpty == true
-                                            ? g.categoria!.nombre[0].toUpperCase()
-                                            : '?',
-                                        style: TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: color)),
+                                child: Text(
+                                    Iconos.toEmoji(g.categoria?.icono ?? ''),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 20, height: 1.0)),
                               ),
                     ),
                     const SizedBox(width: 10),
@@ -593,17 +707,10 @@ class _TarjetaGrupo extends StatelessWidget {
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Center(
-                                child: g.categoria != null && Iconos.esEmoji(g.categoria!.icono)
-                                    ? Text(g.categoria!.icono,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 20, height: 1.0))
-                                    : Text(
-                                        g.categoria?.nombre.isNotEmpty == true
-                                            ? g.categoria!.nombre[0].toUpperCase()
-                                            : '?',
-                                        style: TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: color)),
+                                child: Text(
+                                    Iconos.toEmoji(g.categoria?.icono ?? ''),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 20, height: 1.0)),
                               ),
                       ),
                       const SizedBox(width: 10),

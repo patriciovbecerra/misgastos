@@ -22,7 +22,7 @@ class DatabaseHelper {
     final path = join(dbPath, filePath);
     return await openDatabase(
       path,
-      version: 12,
+      version: 13,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -49,7 +49,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL,
         icono TEXT NOT NULL,
-        color TEXT NOT NULL
+        color TEXT NOT NULL,
+        activo INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -117,6 +118,12 @@ class DatabaseHelper {
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 4) {
       await _insertCategoriasNuevas(db);
+    }
+    if (oldVersion < 13) {
+      try {
+        await db.execute(
+            "ALTER TABLE categorias ADD COLUMN activo INTEGER NOT NULL DEFAULT 1");
+      } catch (_) {}
     }
     if (oldVersion < 12) {
       // Migrar íconos de texto a emojis
@@ -418,6 +425,8 @@ class DatabaseHelper {
     final db = await database;
     return await db.insert('participantes', p.toMap());
   }
+
+  Future<int> eliminarParticipante(int id) => deleteParticipante(id);
 
   Future<int> deleteParticipante(int id) async {
     final db = await database;

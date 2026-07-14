@@ -628,23 +628,11 @@ class _TarjetaGasto extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
-                    child: gasto.categoria != null
-                        ? Iconos.esEmoji(gasto.categoria!.icono)
-                            ? Text(
-                                gasto.categoria!.icono,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 22, height: 1.0),
-                              )
-                            : Text(
-                                gasto.categoria!.nombre.isNotEmpty
-                                    ? gasto.categoria!.nombre[0].toUpperCase()
-                                    : '?',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: color),
-                              )
-                        : Icon(Icons.receipt_outlined, color: color, size: 22),
+                    child: Text(
+                        Iconos.toEmoji(gasto.categoria?.icono ?? ''),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 22, height: 1.0),
+                      ),
                   ),
                 ),
                 const SizedBox(width: 12),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /// Diálogo genérico con título, contenido y botones Cancelar / Guardar
-class DialogoFormulario extends StatelessWidget {
+class DialogoFormulario extends StatefulWidget {
   final String titulo;
   final Widget contenido;
-  final VoidCallback onGuardar;
+  final Future<void> Function() onGuardar;
   final String textoGuardar;
 
   const DialogoFormulario({
@@ -16,18 +16,36 @@ class DialogoFormulario extends StatelessWidget {
   });
 
   @override
+  State<DialogoFormulario> createState() => _DialogoFormularioState();
+}
+
+class _DialogoFormularioState extends State<DialogoFormulario> {
+  bool _guardando = false;
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(titulo),
-      content: SingleChildScrollView(child: contenido),
+      title: Text(widget.titulo),
+      content: SingleChildScrollView(child: widget.contenido),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _guardando ? null : () => Navigator.pop(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: onGuardar,
-          child: Text(textoGuardar),
+          onPressed: _guardando ? null : () async {
+            setState(() => _guardando = true);
+            try {
+              await widget.onGuardar();
+            } finally {
+              if (mounted) setState(() => _guardando = false);
+            }
+          },
+          child: _guardando
+              ? const SizedBox(
+                  width: 18, height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : Text(widget.textoGuardar),
         ),
       ],
     );

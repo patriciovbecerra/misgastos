@@ -347,17 +347,10 @@ class _PantallaTodosGastosGrupoState extends State<PantallaTodosGastosGrupo> {
                                       borderRadius: BorderRadius.circular(11),
                                     ),
                                     child: Center(
-                                child: g.categoria != null && Iconos.esEmoji(g.categoria!.icono)
-                                    ? Text(g.categoria!.icono,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(fontSize: 20, height: 1.0))
-                                    : Text(
-                                        g.categoria?.nombre.isNotEmpty == true
-                                            ? g.categoria!.nombre[0].toUpperCase()
-                                            : '?',
-                                        style: TextStyle(fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: color)),
+                                child: Text(
+                                    Iconos.toEmoji(g.categoria?.icono ?? ''),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 20, height: 1.0)),
                               ),
                                   ),
                                   const SizedBox(width: 12),
